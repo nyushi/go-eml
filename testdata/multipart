@@ -1,0 +1,29 @@
+Return-Path: <nyushi@example.com>
+To: nyushi@example.com
+From: Yushi Nakai <nyushi@example.com>
+Subject: multipart
+Message-ID: <744ea9a4-95b8-007d-657b-a6d909ce61f0@gmail.com>
+Date: Mon, 11 Feb 2019 11:51:57 +0900
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.14; rv:60.0)
+ Gecko/20100101 Thunderbird/60.5.0
+MIME-Version: 1.0
+Content-Type: multipart/mixed;
+ boundary="------------661FE4891A157355A5B6C1E2"
+Content-Language: en-US
+
+This is a multi-part message in MIME format.
+--------------661FE4891A157355A5B6C1E2
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Transfer-Encoding: 7bit
+
+this is test mail
+
+--------------661FE4891A157355A5B6C1E2
+Content-Type: text/plain; charset=UTF-8; x-mac-type="0"; x-mac-creator="0";
+ name="data"
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment;
+ filename="data"
+
+dGhpcyBpcyBkYXRhCg==
+--------------661FE4891A157355A5B6C1E2--
