@@ -1,11 +1,14 @@
-package eml
+package eml_test
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"os"
 	"reflect"
 	"testing"
+
+	eml "github.com/nyushi/go-eml"
 )
 
 func strptr(s string) *string {
@@ -18,11 +21,11 @@ func TestParse(t *testing.T) {
 func testParseISO2022JP(t *testing.T) {
 	for _, c := range []struct {
 		Path    string
-		Message *Message
+		Message *eml.Message
 	}{
 		{
 			Path: "testdata/body-iso-2022-jp-encoded",
-			Message: &Message{
+			Message: &eml.Message{
 				RawHeaders: map[string][]string{
 					"Return-Path":               []string{"<nyushi@example.com>"},
 					"Message-Id":                []string{"<bfdd474e-8853-5f17-fa16-c29668e317c4@gmail.com>"},
@@ -55,7 +58,7 @@ func testParseISO2022JP(t *testing.T) {
 		},
 		{
 			Path: "testdata/body-utf8-encoded",
-			Message: &Message{
+			Message: &eml.Message{
 				RawHeaders: map[string][]string{
 					"Return-Path":               {"<nyushi@example.com>"},
 					"Message-Id":                {"<74f9ebda-89bb-61e1-7954-f973c4e48d2e@gmail.com>"},
@@ -88,7 +91,7 @@ func testParseISO2022JP(t *testing.T) {
 		},
 		{
 			Path: "testdata/multipart",
-			Message: &Message{
+			Message: &eml.Message{
 				RawHeaders: map[string][]string{
 					"Content-Language": {"en-US"},
 					"Content-Type":     {"multipart/mixed; boundary=\"------------661FE4891A157355A5B6C1E2\""},
@@ -114,7 +117,7 @@ func testParseISO2022JP(t *testing.T) {
 					"User-Agent":       {"Mozilla/5.0 (Macintosh; Intel Mac OS X 10.14; rv:60.0) Gecko/20100101 Thunderbird/60.5.0"},
 				},
 				RawBody: "This is a multi-part message in MIME format.\r\n--------------661FE4891A157355A5B6C1E2\r\nContent-Type: text/plain; charset=utf-8; format=flowed\r\nContent-Transfer-Encoding: 7bit\r\n\r\nthis is test mail\r\n\r\n--------------661FE4891A157355A5B6C1E2\r\nContent-Type: text/plain; charset=UTF-8; x-mac-type=\"0\"; x-mac-creator=\"0\";\r\n name=\"data\"\r\nContent-Transfer-Encoding: base64\r\nContent-Disposition: attachment;\r\n filename=\"data\"\r\n\r\ndGhpcyBpcyBkYXRhCg==\r\n--------------661FE4891A157355A5B6C1E2--\r\n",
-				Parts: []*Message{
+				Parts: []*eml.Message{
 					{
 						RawHeaders: map[string][]string{
 							"Content-Transfer-Encoding": {"7bit"},
@@ -149,7 +152,7 @@ func testParseISO2022JP(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to read %s: %s", c.Path, err)
 		}
-		msg, err := Parse(r)
+		msg, err := eml.Parse(r)
 		if err != nil {
 			t.Fatalf("error at parse: %s", err)
 		}
@@ -159,7 +162,7 @@ func testParseISO2022JP(t *testing.T) {
 	}
 }
 
-func messageEqual(got, expected *Message) error {
+func messageEqual(got, expected *eml.Message) error {
 	if !reflect.DeepEqual(expected.RawHeaders, got.RawHeaders) {
 		g, _ := json.MarshalIndent(got.RawHeaders, "", "  ")
 		e, _ := json.MarshalIndent(expected.RawHeaders, "", "  ")
@@ -189,4 +192,67 @@ func messageEqual(got, expected *Message) error {
 		}
 	}
 	return nil
+}
+
+func ExampleParse() {
+	data1 := `Return-Path: <nyushi@example.com>
+To: nyushi@example.com
+From: Yushi Nakai <nyushi@example.com>
+Subject: =?UTF-8?B?44OG44K544OI44Oh44O844Or?=
+Message-ID: <74f9ebda-89bb-61e1-7954-f973c4e48d2e@gmail.com>
+Date: Fri, 8 Feb 2019 23:30:34 +0900
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.14; rv:60.0)
+ Gecko/20100101 Thunderbird/60.5.0
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Language: en-US
+Content-Transfer-Encoding: 8bit
+
+テスト用のデータです。`
+
+	data2 := `Return-Path: <nyushi@example.com>
+To: nyushi@example.com
+From: Yushi Nakai <nyushi@example.com>
+Subject: multipart
+Message-ID: <744ea9a4-95b8-007d-657b-a6d909ce61f0@gmail.com>
+Date: Mon, 11 Feb 2019 11:51:57 +0900
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.14; rv:60.0)
+ Gecko/20100101 Thunderbird/60.5.0
+MIME-Version: 1.0
+Content-Type: multipart/mixed;
+ boundary="------------661FE4891A157355A5B6C1E2"
+Content-Language: en-US
+
+This is a multi-part message in MIME format.
+--------------661FE4891A157355A5B6C1E2
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Transfer-Encoding: 7bit
+
+this is test mail
+
+--------------661FE4891A157355A5B6C1E2
+Content-Type: text/plain; charset=UTF-8; x-mac-type="0"; x-mac-creator="0";
+ name="data"
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment;
+ filename="data"
+
+dGhpcyBpcyBkYXRhCg==
+--------------661FE4891A157355A5B6C1E2--`
+
+	msg1, _ := eml.Parse(bytes.NewBufferString(data1))
+
+	msg2, _ := eml.Parse(bytes.NewBufferString(data2))
+	fmt.Println(*msg1.DecodedBody)
+	fmt.Println(msg1.RawHeaders["Content-Language"][0])
+	fmt.Println(msg2.DecodedBody)
+	fmt.Println(len(msg2.Parts))
+	fmt.Println(*msg2.Parts[0].DecodedBody)
+
+	// Output:
+	// テスト用のデータです。
+	// en-US
+	// <nil>
+	// 2
+	// this is test mail
 }

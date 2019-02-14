@@ -45,12 +45,9 @@ var encodings = map[string]encoding.Encoding{
 }
 
 func charsetReader(charset string, input io.Reader) (io.Reader, error) {
-	if charset == "" {
-		return input, nil
-	}
 	enc, ok := encodings[strings.ToLower(charset)]
 	if !ok {
-		return nil, fmt.Errorf("charset `%s` is not supported", charset)
+		return input, nil
 	}
 	reader := transform.NewReader(input, enc.NewDecoder())
 	return reader, nil
@@ -124,14 +121,9 @@ func decodeBody(charset, transferEncoding string, body io.Reader) (string, error
 		r   io.Reader
 		err error
 	)
-	c := strings.ToLower(charset)
-	if c == "utf-8" || c == "iso-8859-1" {
-		r = body
-	} else {
-		r, err = charsetReader(charset, body)
-		if err != nil {
-			return "", fmt.Errorf("failed to get charsetReader: %s", err)
-		}
+	r, err = charsetReader(charset, body)
+	if err != nil {
+		return "", fmt.Errorf("failed to get charsetReader: %s", err)
 	}
 	b, err := ioutil.ReadAll(r)
 	if err != nil {
