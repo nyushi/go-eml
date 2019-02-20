@@ -40,7 +40,7 @@ func (m *Message) transferEncoding() string {
 
 var encodings = map[string]encoding.Encoding{
 	"iso-2022-jp": japanese.ISO2022JP,
-	"eud-jp":      japanese.EUCJP,
+	"euc-jp":      japanese.EUCJP,
 	"shift_jis":   japanese.ShiftJIS,
 }
 
